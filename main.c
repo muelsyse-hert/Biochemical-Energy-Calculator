@@ -79,30 +79,30 @@ int main(void)
         OrganicSubstance obj;
 
         printf("\n==== Biochemical Energy Calculator ====\n");
-        printf("[1] 计算葡萄糖\n");
-        printf("[2] 计算甘油\n");
-        printf("[3] 计算丙氨酸\n");
-        printf("[0] 安全退出\n");
-        printf("请输入指令: ");
+        printf("[1] Glucose\n");
+        printf("[2] Glycerol\n");
+        printf("[3] Alanine\n");
+        printf("[0] Exit safely\n");
+        printf("Enter choice: ");
 
         if (!read_menu_choice(&choice)) {
-            printf("输入无效，请输入 0~3 的数字指令。\n");
+            printf("Invalid input. Please enter a number from 0 to 3.\n");
             continue;
         }
 
         if (choice == 0) {
-            printf("系统已安全退出。\n");
+            printf("System exited safely.\n");
             break;
         }
 
         if (choice < 1 || choice > 3) {
-            printf("请输入 0~3 之间的有效指令。\n");
+            printf("Please enter a valid choice between 0 and 3.\n");
             continue;
         }
 
-        printf("请输入物质的量 (mol): ");
+        printf("Enter amount in mol: ");
         if (!read_positive_mol(&mol)) {
-            printf("输入无效，物质的量必须是大于 0 的数字。\n");
+            printf("Invalid input. Amount must be a number greater than 0.\n");
             continue;
         }
 
