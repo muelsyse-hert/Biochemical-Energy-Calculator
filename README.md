@@ -1,51 +1,120 @@
 # Biochemical Energy Calculator
 
-一个使用 C 语言编写的控制台生化能量计算器，用于估算葡萄糖、甘油和丙氨酸完全氧化时的 ATP 产量、热能与能量损耗，并以表格形式输出结果。
+Biochemical Energy Calculator is a small C console application for estimating the energy output of complete oxidation of three small organic molecules:
 
-## 功能
+- Glucose
+- Glycerol
+- Alanine
 
-- 计算葡萄糖、甘油、丙氨酸的完全氧化结果
-- 按预设代谢步骤分配 ATP、热能和损耗
-- 支持控制台交互菜单
-- 支持小分子结果展示表
+The program prints a summary table with total heat, total ATP, and total energy loss. It also keeps the calculation logic and presentation logic in separate source files so the project is easy to read and extend.
 
-## 文件说明
+## Features
 
-- `main.c`：程序入口，负责菜单、输入校验与路由
-- `calc_small.c`：小分子代谢计算核心
-- `display.c`：结果展示模块
-- `README.md`：项目说明文档
+- Interactive console menu
+- Input validation for menu choices and mol values
+- Separate calculation modules for glucose, glycerol, and alanine
+- Tabular console output for small-molecule oxidation results
+- Windows-friendly build script
 
-## 编译
+## Project Files
 
-在 Windows + GCC 环境下可直接使用：
+- `main.c`: menu, input validation, and routing
+- `calc_small.c`: small-molecule energy calculation functions
+- `display.c`: console output functions
+- `build.bat`: one-click Windows build script
+- `bec.exe`: compiled Windows executable
+- `GITHUB_PUBLISH_TEMPLATE.md`: reusable publishing template
+
+## Requirements
+
+To build from source, you need:
+
+- A C11-compatible compiler such as `gcc` or `clang`
+- A Windows terminal environment if you want to use `build.bat`
+
+## Quick Start
+
+### Option 1: Run the prebuilt executable
+
+If you downloaded the release package, run:
+
+```bat
+bec.exe
+```
+
+### Option 2: Build from source
+
+Use the build script:
+
+```bat
+build.bat
+```
+
+Or compile manually:
 
 ```bash
 gcc -std=c11 -Wall -Wextra -Wpedantic main.c calc_small.c display.c -o bec.exe
 ```
 
-## 运行
+Then run:
 
-```bash
-.\bec.exe
+```bat
+bec.exe
 ```
 
-启动后按菜单输入：
+## Usage
 
-- `1` 计算葡萄糖
-- `2` 计算甘油
-- `3` 计算丙氨酸
-- `0` 安全退出
+After launch, the program shows a menu:
 
-随后输入对应物质的量 `mol`，程序会自动校验输入是否为大于 `0` 的数字。
+- `1` - Calculate glucose
+- `2` - Calculate glycerol
+- `3` - Calculate alanine
+- `0` - Exit safely
 
-## 计算说明
+After choosing `1`, `2`, or `3`, enter the amount in mol. The program checks that the value is numeric and greater than zero.
 
-- 葡萄糖：采用现代 `32 ATP` 模型（苹果酸-天冬氨酸穿梭）
-- 甘油：按题设总产量 `18.5 ATP`
-- 丙氨酸：按题设总产量 `15 ATP`
-- 热能与损耗采用统一的能量守恒分配方式
+## Output Model
 
-## 已验证状态
+The calculation model uses the following values:
 
-当前版本已完成编译与基本交互测试，能够正常输出结果表。
+- Glucose: modern `32 ATP` model with malate-aspartate shuttle
+- Glycerol: `18.5 ATP` per mol
+- Alanine: `15 ATP` per mol
+- Heat and energy loss are allocated by step according to ATP weight
+
+## Build Script
+
+`build.bat` compiles the project in one step on Windows:
+
+```bat
+@echo off
+setlocal
+gcc -std=c11 -Wall -Wextra -Wpedantic main.c calc_small.c display.c -o bec.exe
+if errorlevel 1 (
+    echo Build failed.
+    exit /b 1
+)
+echo Build succeeded.
+endlocal
+```
+
+## GitHub Release Notes Template
+
+Use `GITHUB_PUBLISH_TEMPLATE.md` as a starting point when creating a release or project landing page.
+
+## Example
+
+```text
+==== Biochemical Energy Calculator ====
+[1] Glucose
+[2] Glycerol
+[3] Alanine
+[0] Exit safely
+Enter choice:
+```
+
+## Notes
+
+- The executable `bec.exe` is provided for convenience on Windows.
+- If you are building on another platform, compile the source files with any C11 compiler.
+- For best compatibility, keep the project files in the repository root.
