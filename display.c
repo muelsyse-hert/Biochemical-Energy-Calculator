@@ -59,6 +59,58 @@ void display_small_molecule_table(const OrganicSubstance* obj)
            obj->total_atp,
            obj->total_loss);
     printf("====\n");
+
+    printf("==== Calculation Process ====\n");
+    if (obj->input_mol > 0.0) {
+        const double base_heat = obj->total_heat / obj->input_mol;
+        const double base_atp = obj->total_atp / obj->input_mol;
+
+        printf("[Heat] %.2f * %.2f = %.2f (kJ)\n",
+               obj->input_mol,
+               base_heat,
+               obj->total_heat);
+        printf("[ATP ] %.2f * %.2f = %.2f (mol)\n",
+               obj->input_mol,
+               base_atp,
+               obj->total_atp);
+        printf("[Loss] %.2f - (%.2f * 30.50) = %.2f (kJ)\n",
+               obj->total_heat,
+               obj->total_atp,
+               obj->total_loss);
+    } else {
+        printf("[Heat] -\n");
+        printf("[ATP ] -\n");
+        printf("[Loss] -\n");
+    }
+    printf("====\n");
+
+    printf("==== Step Details ====\n");
+    printf("%-6s %-24s %-28s %-15s %-15s %-15s\n",
+           "No.", "Reaction Stage", "Precursor / Amount", "Heat(kJ)", "ATP(mol)", "Loss(kJ)");
+    printf("----\n");
+    for (int i = 0; i < obj->actual_steps && i < MAX_STEPS; ++i) {
+        char precursor_text[80];
+        const char* precursor = obj->steps[i].precursor_product;
+
+        if (is_placeholder_precursor(precursor)) {
+            snprintf(precursor_text, sizeof(precursor_text), "-");
+        } else {
+            snprintf(precursor_text,
+                     sizeof(precursor_text),
+                     "%s / %.2f",
+                     precursor,
+                     obj->steps[i].utilized_amount);
+        }
+
+        printf("%-6d %-24s %-28s %-15.2f %-15.2f %-15.2f\n",
+               i + 1,
+               obj->steps[i].step_name,
+               precursor_text,
+               obj->steps[i].heat_yield,
+               obj->steps[i].atp_yield,
+               obj->steps[i].energy_loss);
+    }
+    printf("====\n");
 }
 
 void display_macro_molecule_table(const Macromolecule* macro)
