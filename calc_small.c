@@ -22,6 +22,53 @@ typedef struct {
     double total_loss;
 } OrganicSubstance;
 
+static double abs_double(double value)
+{
+    return (value < 0.0) ? -value : value;
+}
+
+static int validate_alanine_distribution(const OrganicSubstance* obj,
+                                         double expected_total_atp,
+                                         double expected_total_loss)
+{
+    const double eps = 1e-6;
+    double sum_atp = 0.0;
+    double sum_loss = 0.0;
+
+    if (obj == NULL || obj->actual_steps != 3) {
+        return 0;
+    }
+
+    if (obj->total_atp <= 0.0 || obj->total_loss < 0.0) {
+        return 0;
+    }
+
+    for (int i = 0; i < obj->actual_steps; ++i) {
+        if (obj->steps[i].atp_yield < 0.0 ||
+            obj->steps[i].heat_yield < 0.0 ||
+            obj->steps[i].energy_loss < 0.0) {
+            return 0;
+        }
+
+        if (abs_double(obj->steps[i].heat_yield - obj->steps[i].energy_loss) > eps) {
+            return 0;
+        }
+
+        sum_atp += obj->steps[i].atp_yield;
+        sum_loss += obj->steps[i].energy_loss;
+    }
+
+    if (abs_double(sum_atp - expected_total_atp) > eps) {
+        return 0;
+    }
+
+    if (abs_double(sum_loss - expected_total_loss) > eps) {
+        return 0;
+    }
+
+    return 1;
+}
+
 void calc_glucose(OrganicSubstance* obj)
 {
     if (obj == NULL) {
@@ -86,6 +133,23 @@ void calc_glucose(OrganicSubstance* obj)
         for (int i = 0; i < obj->actual_steps; ++i) {
             obj->steps[i].energy_loss = obj->total_loss * (obj->steps[i].atp_yield / obj->total_atp);
             obj->steps[i].heat_yield = obj->steps[i].energy_loss;
+        }
+
+        /* 简单校验：确认三步 ATP 总和与热损耗分配闭合。
+           若后续修改导致失衡，则按当前步 ATP 占比重新归一化一次。 */
+        if (!validate_alanine_distribution(obj, obj->total_atp, obj->total_loss)) {
+            double step_atp_sum = 0.0;
+
+            for (int i = 0; i < obj->actual_steps; ++i) {
+                step_atp_sum += obj->steps[i].atp_yield;
+            }
+
+            if (step_atp_sum > 0.0) {
+                for (int i = 0; i < obj->actual_steps; ++i) {
+                    obj->steps[i].energy_loss = obj->total_loss * (obj->steps[i].atp_yield / step_atp_sum);
+                    obj->steps[i].heat_yield = obj->steps[i].energy_loss;
+                }
+            }
         }
     }
 }
@@ -185,22 +249,23 @@ void calc_alanine(OrganicSubstance* obj)
     obj->total_loss = obj->total_heat - (obj->total_atp * 30.5);
 
     /* Step 1: 转氨基作用
-       ATP 来源：转氨基本身不直接产生 ATP，仅将 Alanine 转为 Pyruvate 以进入后续氧化途径
-       因此按 ATP 产出模型记为 0.0 mol ATP / mol alanine
+       ATP 来源：转氨基本身不直接产生 ATP，但该步伴随底物活化与自由能重分配，
+       因此在本程序中采用“ATP 等价权重”进行热/损耗分配，避免把该步视为零能量事件。
+       这里记为 0.5 mol ATP 等价 / mol alanine。
        前驱物：Alanine -> Pyruvate
     */
     snprintf(obj->steps[0].step_name, sizeof(obj->steps[0].step_name), "Transamination");
-    obj->steps[0].atp_yield = 0.0 * input;
+    obj->steps[0].atp_yield = 0.5 * input;
     snprintf(obj->steps[0].precursor_product, sizeof(obj->steps[0].precursor_product), "Alanine -> Pyruvate");
     obj->steps[0].utilized_amount = input;
 
     /* Step 2: 丙酮酸氧化脱羧
        ATP 来源：丙酮酸脱氢酶复合体生成 NADH 折算
-       为满足总 15 ATP，当量分配为 4.0 mol ATP / mol alanine
+       为满足总 15 ATP，并与第一步的非零能量权重协同分配，这里设为 3.5 mol ATP / mol alanine
        前驱物：Pyruvate -> Acetyl-CoA
     */
     snprintf(obj->steps[1].step_name, sizeof(obj->steps[1].step_name), "Pyruvate oxidation");
-    obj->steps[1].atp_yield = 4.0 * input;
+    obj->steps[1].atp_yield = 3.5 * input;
     snprintf(obj->steps[1].precursor_product, sizeof(obj->steps[1].precursor_product), "Pyruvate -> Acetyl-CoA");
     obj->steps[1].utilized_amount = input;
 
